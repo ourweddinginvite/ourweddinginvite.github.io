@@ -1,0 +1,32 @@
+.quran-arabic {
+  font-family: 'Amiri Quran', serif;
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  line-height: 2;
+  color: var(--gold);
+  margin: 6px 0 0;
+  max-width: 100%;
+}
+.quran-meaning, .nikah-message {
+  margin: 0;
+  font-size: clamp(1.05rem, 1.7vw, 1.25rem);
+  font-style: italic;
+  line-height: 1.35;
+}
+.quran-reference {
+  margin: 0;
+  font: 0.65rem/1.5 Arial, sans-serif;
+  color: var(--muted);
+}
+.scene > :nth-child(7) { --line-order: 7; }
+.scene[aria-label="Invitation"] .invitation-line {
+  font-size: clamp(1.05rem, 1.8vw, 1.4rem);
+}
+@media (max-width: 480px) {
+  .scene { gap: 7px; }
+  .invocation { font-size: 1.2rem; margin: 0; }
+  .verse { margin: 0; }
+  .couple-intro { font-size: 0.95rem; line-height: 1.3; margin: 0; }
+  .family-detail { font-size: 0.9rem; line-height: 1.3; }
+  .nikah-message, .quran-meaning { font-size: 0.95rem; }
+  .quran-arabic { font-size: 1.05rem; line-height: 1.9; }
+}
