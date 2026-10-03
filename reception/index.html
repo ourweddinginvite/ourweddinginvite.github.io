@@ -542,6 +542,18 @@
         color: var(--gold);
       }
 
+      .nowrap { white-space: nowrap; }
+
+      .couple-intro {
+        margin: 0 0 6px;
+        max-width: 500px;
+        font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+        font-style: italic;
+        line-height: 1.45;
+        color: var(--gold);
+        text-wrap: balance;
+      }
+
       .names {
         margin: 0;
         font-size: clamp(2rem, 3.4vw, 3.1rem);
@@ -796,6 +808,11 @@
           font-size: 0.98rem;
         }
 
+        .couple-intro {
+          font-size: 0.98rem;
+          margin-bottom: 2px;
+        }
+
         .scroll-hint { padding-top: 6px; }
       }
 
@@ -942,7 +959,7 @@
           </section>
 
           <section class="scene" aria-label="The couple">
-            <p class="badge">With the blessings of our families</p>
+            <p class="couple-intro">In celebration of faith, love, and a beautiful destiny written by <span class="nowrap">Al-Khaliq</span>, we invite you to share in the joy as we unite in holy matrimony.</p>
             <h1 class="names">Mohammad Rafiq</h1>
             <p class="family-detail">Son of Late Mr. Habib and Mrs. Mumtaz Begum Habib</p>
             <p class="weds">weds</p>
