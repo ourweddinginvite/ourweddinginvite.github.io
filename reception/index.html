@@ -1003,8 +1003,14 @@
         return scenesBox.scrollTop + scenesBox.clientHeight >= scenesBox.scrollHeight - 4;
       }
 
+      let musicEndTimer;
       scenesBox.addEventListener("scroll", () => {
-        scrollHint.classList.toggle("is-done", atEnd());
+        const end = atEnd();
+        scrollHint.classList.toggle("is-done", end);
+        // Let the music linger 10s on the last page, then fade it out (once only).
+        if (end && musicEndTimer === undefined) {
+          musicEndTimer = window.setTimeout(fadeOutMusic, 10000);
+        }
       }, { passive: true });
 
       // Glide to the next page every few seconds; if the guest touches or scrolls,
@@ -1085,6 +1091,15 @@
       }
 
       musicToggle.addEventListener("click", () => setMusic(!musicOn));
+
+      function fadeOutMusic() {
+        if (!musicOn) return;
+        window.clearInterval(fadeTimer);
+        fadeTimer = window.setInterval(() => {
+          music.volume = Math.max(0, music.volume - 0.05);
+          if (music.volume <= 0) setMusic(false);
+        }, 150);
+      }
 
       function openInvitation() {
         if (opened) return;
