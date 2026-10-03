@@ -1016,9 +1016,9 @@
       scenesBox.addEventListener("scroll", () => {
         const end = atEnd();
         scrollHint.classList.toggle("is-done", end);
-        // Let the music linger 10s on the last page, then fade it out (once only).
+        // Fade during the final two seconds, stopping ten seconds after arrival.
         if (end && musicEndTimer === undefined) {
-          musicEndTimer = window.setTimeout(fadeOutMusic, 10000);
+          musicEndTimer = window.setTimeout(fadeOutMusic, 8000);
         }
       }, { passive: true });
 
@@ -1122,10 +1122,14 @@
       function fadeOutMusic() {
         if (!musicOn) return showReplay();
         window.clearInterval(fadeTimer);
+        const started = performance.now();
+        const initialVolume = music.volume;
         fadeTimer = window.setInterval(() => {
-          music.volume = Math.max(0, music.volume - 0.05);
-          if (music.volume <= 0) showReplay();
-        }, 150);
+          const progress = Math.min(1, (performance.now() - started) / 2000);
+          music.volume = initialVolume * (1 - progress);
+          // Mobile browsers may ignore volume changes; stopping must not depend on them.
+          if (progress >= 1) showReplay();
+        }, 100);
       }
 
       function replayInvitation() {
