@@ -415,8 +415,7 @@
         border-radius: 28px;
         box-shadow: var(--shadow);
         padding: 24px;
-        overflow-y: auto;
-        overscroll-behavior: contain;
+        overflow: hidden;
         opacity: 0;
         transform: translate(-50%, -50%);
         backdrop-filter: blur(3px);
@@ -429,7 +428,7 @@
       .card-inner {
         position: relative;
         width: 100%;
-        min-height: 100%;
+        height: 100%;
         display: flex;
         flex-direction: column;
         border-radius: 22px;
@@ -495,39 +494,45 @@
       .ornament.top { top: -8px; }
       .ornament.bottom { bottom: -8px; }
 
-      .scene {
-        display: none;
+      .scenes {
+        position: relative;
+        z-index: 1;
         flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scroll-snap-type: y mandatory;
+        scrollbar-width: none;
+      }
+
+      .scenes::-webkit-scrollbar { display: none; }
+
+      .scene {
+        min-height: 100%;
+        display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 16px;
+        padding-block: 10px;
         text-align: center;
         max-width: 100%;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
       }
 
-      .scene.is-active {
-        display: flex;
-      }
+      .card.is-revealed .scene > * { opacity: 0; }
 
-      .scene[hidden] { display: none; }
-
-      .card.is-revealed .scene.is-active > * { opacity: 0; }
-
-      .card.is-text-ready .scene.is-active > * {
+      .card.is-text-ready .scene.in-view > * {
         animation: textAppear 0.9s ease both;
         animation-delay: calc((var(--line-order, 1) - 1) * 0.12s);
       }
 
-      .scene.is-active > :nth-child(2) { --line-order: 2; }
-      .scene.is-active > :nth-child(3) { --line-order: 3; }
-      .scene.is-active > :nth-child(4) { --line-order: 4; }
-      .scene.is-active > :nth-child(5) { --line-order: 5; }
-      .scene.is-active > :nth-child(6) { --line-order: 6; }
-
-      .scene.is-leaving {
-        animation: sceneExit 0.65s ease-in forwards;
-      }
+      .scene > :nth-child(2) { --line-order: 2; }
+      .scene > :nth-child(3) { --line-order: 3; }
+      .scene > :nth-child(4) { --line-order: 4; }
+      .scene > :nth-child(5) { --line-order: 5; }
+      .scene > :nth-child(6) { --line-order: 6; }
 
       .badge {
         font-family: Arial, Helvetica, sans-serif;
@@ -631,36 +636,39 @@
         color: var(--ivory);
       }
 
-      .scene-controls {
+      .scroll-hint {
         position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 18px;
-        padding-top: 18px;
         z-index: 1;
-      }
-
-      .scene-controls button {
-        border: 1px solid rgba(230,198,142,0.6);
-        border-radius: 20px;
-        padding: 7px 14px;
-        background: var(--royal);
-        color: var(--ivory);
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 0.75rem;
-        cursor: pointer;
-      }
-
-      .scene-controls button:disabled {
-        opacity: 0.45;
-        cursor: default;
-      }
-
-      .scene-count {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        padding-top: 10px;
         color: var(--muted);
         font-family: Arial, Helvetica, sans-serif;
-        font-size: 0.75rem;
+        font-size: 0.68rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+      }
+
+      .scroll-hint::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-right: 1.5px solid currentColor;
+        border-bottom: 1.5px solid currentColor;
+        transform: rotate(45deg);
+        animation: hintBounce 1.6s ease-in-out infinite;
+      }
+
+      .card:not(.is-text-ready) .scroll-hint,
+      .scroll-hint.is-done { opacity: 0; }
+
+      @keyframes hintBounce {
+        0%, 100% { transform: translateY(0) rotate(45deg); }
+        50% { transform: translateY(5px) rotate(45deg); }
       }
 
       @keyframes textAppear {
@@ -788,19 +796,16 @@
           font-size: 0.98rem;
         }
 
-        .scene-controls {
-          padding-top: 10px;
-          gap: 12px;
-        }
+        .scroll-hint { padding-top: 6px; }
       }
 
       @media (prefers-reduced-motion: reduce) {
         .door-stage { display: none; }
         .petal { display: none; }
         .card { animation: none; opacity: 1; transform: translate(-50%, -50%); }
-        .scene.is-leaving,
-        .card.is-text-ready .scene.is-active > * { animation: none; }
-        .card.is-revealed .scene.is-active > * { opacity: 1; }
+        .card.is-text-ready .scene.in-view > *,
+        .scroll-hint::after { animation: none; }
+        .card.is-revealed .scene > * { opacity: 1; }
       }
 
       body.awaiting-open *:not(.petal),
@@ -930,12 +935,13 @@
           <span class="minaret right" aria-hidden="true"></span>
           <div class="ornament top"></div>
 
-          <section class="scene is-active" aria-label="Opening invocation">
+          <div class="scenes">
+          <section class="scene" aria-label="Opening invocation">
             <p class="verse" lang="ar">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p>
             <p class="invocation">In the name of Allah, the Most Gracious, the Most Merciful</p>
           </section>
 
-          <section class="scene" aria-label="The couple" hidden>
+          <section class="scene" aria-label="The couple">
             <p class="badge">With the blessings of our families</p>
             <h1 class="names">Mohammad Rafiq</h1>
             <p class="family-detail">Son of Late Mr. Habib and Mrs. Mumtaz Begum Habib</p>
@@ -944,7 +950,7 @@
             <p class="family-detail">Daughter of Mr. Irshad Ahmed and Mrs. Nazma Irshad</p>
           </section>
 
-          <section class="scene scene--wedding" aria-label="Wedding details" hidden>
+          <section class="scene scene--wedding" aria-label="Wedding details">
             <p class="detail-label">In sha Allah</p>
             <h2 class="event-title">Wedding / Nikah</h2>
             <p class="event-date">04 December 2026</p>
@@ -953,7 +959,7 @@
             <a class="btn" href="https://maps.app.goo.gl/9obKVKnzNo81oUGc8?g_st=ic" target="_blank" rel="noopener noreferrer">Wedding Map</a>
           </section>
 
-          <section class="scene scene--reception" aria-label="Reception details" hidden>
+          <section class="scene scene--reception" aria-label="Reception details">
             <p class="detail-label">In sha Allah</p>
             <h2 class="event-title">Reception / Waleemah</h2>
             <p class="event-date">07 December 2026</p>
@@ -962,18 +968,16 @@
             <a class="btn" href="https://maps.app.goo.gl/vownJMAA79McURLd6?g_st=ic" target="_blank" rel="noopener noreferrer">Reception Map</a>
           </section>
 
-          <section class="scene" aria-label="Invitation" hidden>
+          <section class="scene" aria-label="Invitation">
             <p class="badge">With best compliments from</p>
             <h2 class="event-title">Family &amp; Friends</h2>
             <p class="invitation-line">We warmly invite you to celebrate with us. Your presence and blessings will make these days all the more cherished.</p>
           </section>
 
+          </div>
+
           <div class="ornament bottom"></div>
-          <nav class="scene-controls" aria-label="Invitation pages">
-            <button type="button" id="previous" disabled>Previous</button>
-            <span class="scene-count" aria-live="polite">1 / 5</span>
-            <button type="button" id="next">Next</button>
-          </nav>
+          <p class="scroll-hint" aria-hidden="true">Scroll</p>
         </div>
       </div>
     </div>
@@ -982,71 +986,60 @@
       <button type="button" class="music-toggle" aria-pressed="false">&#9835; Play music</button>
     </div>
     <script>
+      const scenesBox = document.querySelector(".scenes");
       const scenes = Array.from(document.querySelectorAll(".scene"));
-      const previous = document.getElementById("previous");
-      const next = document.getElementById("next");
-      const count = document.querySelector(".scene-count");
+      const scrollHint = document.querySelector(".scroll-hint");
       const card = document.querySelector(".card");
       const couplePhoto = document.querySelector(".couple-photo");
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      let currentScene = 0;
-      let autoplay;
-      let userNavigated = false;
-      let transitioning = false;
+      let autoScroll;
+      let userTookOver = false;
 
-      function showScene(index) {
-        if (transitioning || index < 0 || index >= scenes.length || index === currentScene) return;
-        transitioning = true;
-        const outgoing = scenes[currentScene];
+      const sceneObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add("in-view");
+        });
+      }, { root: scenesBox, threshold: 0.3 });
+      scenes.forEach((scene) => sceneObserver.observe(scene));
 
-        function finishChange() {
-          outgoing.classList.remove("is-active", "is-leaving");
-          outgoing.hidden = true;
-          currentScene = index;
-          scenes[currentScene].hidden = false;
-          scenes[currentScene].classList.add("is-active");
-          previous.disabled = currentScene === 0;
-          next.disabled = currentScene === scenes.length - 1;
-          count.textContent = `${currentScene + 1} / ${scenes.length}`;
-          transitioning = false;
-          if (!userNavigated && currentScene < scenes.length - 1) {
-            autoplay = window.setTimeout(advance, 4000);
-          }
-        }
-
-        if (reducedMotion) {
-          finishChange();
-        } else {
-          outgoing.classList.add("is-leaving");
-          function onSceneExit(event) {
-            if (event.target === outgoing && event.animationName === "sceneExit") {
-              outgoing.removeEventListener("animationend", onSceneExit);
-              finishChange();
-            }
-          }
-          outgoing.addEventListener("animationend", onSceneExit);
-        }
+      function currentIndex() {
+        const middle = scenesBox.scrollTop + scenesBox.clientHeight / 2;
+        let index = 0;
+        scenes.forEach((scene, i) => { if (scene.offsetTop <= middle) index = i; });
+        return index;
       }
 
-      function advance() {
-        if (currentScene < scenes.length - 1) {
-          showScene(currentScene + 1);
-        }
+      function atEnd() {
+        return scenesBox.scrollTop + scenesBox.clientHeight >= scenesBox.scrollHeight - 4;
       }
 
-      previous.addEventListener("click", () => {
-        userNavigated = true;
-        window.clearTimeout(autoplay);
-        showScene(currentScene - 1);
+      scenesBox.addEventListener("scroll", () => {
+        scrollHint.classList.toggle("is-done", atEnd());
+      }, { passive: true });
+
+      // Glide to the next page on its own until the guest starts scrolling themselves.
+      function scheduleAutoScroll() {
+        window.clearTimeout(autoScroll);
+        if (userTookOver || reducedMotion) return;
+        autoScroll = window.setTimeout(() => {
+          const index = currentIndex();
+          if (index < scenes.length - 1 && !atEnd()) {
+            scenesBox.scrollTo({ top: scenes[index + 1].offsetTop, behavior: "smooth" });
+            scheduleAutoScroll();
+          }
+        }, 4500);
+      }
+
+      ["wheel", "touchstart", "pointerdown", "keydown"].forEach((type) => {
+        card.addEventListener(type, () => {
+          userTookOver = true;
+          window.clearTimeout(autoScroll);
+        }, { passive: true });
       });
 
-      next.addEventListener("click", () => {
-        userNavigated = true;
-        window.clearTimeout(autoplay);
-        showScene(currentScene + 1);
-      });
-
-      if (!reducedMotion) {
+      if (reducedMotion) {
+        card.classList.add("is-revealed", "is-text-ready");
+      } else {
         let coupleRevealStarted = false;
         couplePhoto.addEventListener("animationend", async (event) => {
           if (event.target === couplePhoto && event.animationName === "coupleAppear" && !coupleRevealStarted) {
@@ -1054,12 +1047,9 @@
             // Let the couple stand together briefly before the card covers them.
             await new Promise((resolve) => window.setTimeout(resolve, 1900));
             card.classList.add("is-revealed");
-            // Match the 0.65s hand-off that later pages get from sceneExit.
             window.setTimeout(() => {
               card.classList.add("is-text-ready");
-              if (!userNavigated) {
-                autoplay = window.setTimeout(advance, 4000);
-              }
+              scheduleAutoScroll();
             }, 650);
           }
         });
