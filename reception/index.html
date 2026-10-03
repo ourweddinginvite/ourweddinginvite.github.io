@@ -981,7 +981,6 @@
       const scenes = Array.from(document.querySelectorAll(".scene"));
       const scrollHint = document.querySelector(".scroll-hint");
       const card = document.querySelector(".card");
-      const couplePhoto = document.querySelector(".couple-photo");
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       let autoScroll;
 
@@ -1050,6 +1049,11 @@
       if (reducedMotion) {
         card.classList.add("is-revealed", "is-text-ready");
       } else {
+        watchCoupleReveal();
+      }
+
+      function watchCoupleReveal() {
+        const couplePhoto = document.querySelector(".couple-photo");
         let coupleRevealStarted = false;
         couplePhoto.addEventListener("animationend", async (event) => {
           if (event.target === couplePhoto && event.animationName === "coupleAppear" && !coupleRevealStarted) {
@@ -1090,15 +1094,51 @@
         }
       }
 
-      musicToggle.addEventListener("click", () => setMusic(!musicOn));
+      let replayReady = false;
+
+      musicToggle.addEventListener("click", () => {
+        if (replayReady) replayInvitation();
+        else setMusic(!musicOn);
+      });
+
+      function showReplay() {
+        setMusic(false);
+        replayReady = true;
+        musicToggle.textContent = "\u21BB Replay";
+        musicToggle.setAttribute("aria-label", "Replay the invitation from the beginning");
+        musicToggle.removeAttribute("aria-pressed");
+      }
 
       function fadeOutMusic() {
-        if (!musicOn) return;
+        if (!musicOn) return showReplay();
         window.clearInterval(fadeTimer);
         fadeTimer = window.setInterval(() => {
           music.volume = Math.max(0, music.volume - 0.05);
-          if (music.volume <= 0) setMusic(false);
+          if (music.volume <= 0) showReplay();
         }, 150);
+      }
+
+      function replayInvitation() {
+        replayReady = false;
+        musicToggle.removeAttribute("aria-label");
+        window.clearTimeout(autoScroll);
+        window.clearTimeout(musicEndTimer);
+        musicEndTimer = undefined;
+        autoScrollStarted = false;
+        scenes.forEach((scene) => scene.classList.remove("in-view"));
+        scrollHint.classList.remove("is-done");
+        scenesBox.scrollTo({ top: 0, behavior: "auto" });
+        music.currentTime = 0;
+        setMusic(true);
+        if (reducedMotion) {
+          startAutoScroll();
+          return;
+        }
+        // Re-inserting the door scene restarts its CSS animations from the first frame.
+        card.classList.remove("is-revealed", "is-text-ready");
+        const stage = document.querySelector(".door-stage");
+        stage.replaceWith(stage.cloneNode(true));
+        watchCoupleReveal();
       }
 
       function openInvitation() {
