@@ -984,7 +984,6 @@
       const couplePhoto = document.querySelector(".couple-photo");
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       let autoScroll;
-      let userTookOver = false;
 
       const sceneObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
@@ -1008,23 +1007,37 @@
         scrollHint.classList.toggle("is-done", atEnd());
       }, { passive: true });
 
-      // Glide to the next page on its own until the guest starts scrolling themselves.
-      function scheduleAutoScroll() {
+      // Glide to the next page every few seconds; if the guest touches or scrolls,
+      // pause and carry on from wherever they are once they stop.
+      // Give each page time to be read: about 0.35s per word after the lines fade in, at least 6s.
+      function readingTime(scene) {
+        const words = scene.innerText.trim().split(/\s+/).length;
+        return Math.max(6000, 3000 + words * 350);
+      }
+      const RESUME_DELAY = 5000;
+      let autoScrollStarted = false;
+
+      function scheduleAutoScroll(delay) {
         window.clearTimeout(autoScroll);
-        if (userTookOver || reducedMotion) return;
+        if (delay === undefined) delay = readingTime(scenes[currentIndex()]);
         autoScroll = window.setTimeout(() => {
           const index = currentIndex();
           if (index < scenes.length - 1 && !atEnd()) {
-            scenesBox.scrollTo({ top: scenes[index + 1].offsetTop, behavior: "smooth" });
-            scheduleAutoScroll();
+            scenesBox.scrollTo({ top: scenes[index + 1].offsetTop, behavior: reducedMotion ? "auto" : "smooth" });
+            scheduleAutoScroll(readingTime(scenes[index + 1]));
           }
-        }, 4500);
+        }, delay);
       }
 
-      ["wheel", "touchstart", "pointerdown", "keydown"].forEach((type) => {
+      function startAutoScroll() {
+        if (autoScrollStarted) return;
+        autoScrollStarted = true;
+        scheduleAutoScroll();
+      }
+
+      ["wheel", "touchstart", "touchmove", "pointerdown", "keydown"].forEach((type) => {
         card.addEventListener(type, () => {
-          userTookOver = true;
-          window.clearTimeout(autoScroll);
+          if (autoScrollStarted) scheduleAutoScroll(RESUME_DELAY);
         }, { passive: true });
       });
 
@@ -1040,7 +1053,7 @@
             card.classList.add("is-revealed");
             window.setTimeout(() => {
               card.classList.add("is-text-ready");
-              scheduleAutoScroll();
+              startAutoScroll();
             }, 650);
           }
         });
@@ -1078,6 +1091,7 @@
         opened = true;
         document.body.classList.remove("awaiting-open");
         setMusic(true);
+        if (reducedMotion) startAutoScroll();
       }
 
       document.addEventListener("click", (event) => {
